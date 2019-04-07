@@ -1,0 +1,24 @@
+{
+  "name": "API",
+  "version": "1.0.0",
+  "description": "* Create data points * Update data points * DELETE data points",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stream-empire/API.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/stream-empire/API/issues"
+  },
+  "homepage": "https://github.com/stream-empire/API#readme",
+  "dependencies": {
+    "express": "^4.16.4",
+    "pg": "^7.9.0"
+  }
+}
