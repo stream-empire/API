@@ -1,31 +1,62 @@
-const Pool = require('pg').Pool
-const pool = new Pool({
-    user: 'sigurdur',
-    host: 'localhost',
-    database: 'api',
-    password: 'sigurdur',
-    port: 5432
-})
+//Credentials
+const dotenv = require('dotenv');
+dotenv.config()
+const serverIp = process.env.SERVERIP;
+const serverUser = process.env.SERVERUSERNAME;
+const serverPass = process.env.SERVERPASSWORD;
+const serverDb = process.env.SERVERDB;
+const Sequelize = require('sequelize');
+const sequelize = new Sequelize(`postgres://${serverUser}:${serverPass}@${serverIp}:5432/${serverDb}`, {logging: false});
+const Op = Sequelize.Op
+//this sets up the streamer data table
+class streamer extends Sequelize.Model {}
+streamer.init({
+    userID: {type: Sequelize.STRING, unique: true},
+    twitchName: {type: Sequelize.STRING, unique: true},
+    siteName: {type: Sequelize.STRING, unique: true},
+    shards: Sequelize.INTEGER,
+    verified: Sequelize.BOOLEAN,
+    thumbnail: Sequelize.STRING,
+    isLive: Sequelize.BOOLEAN
+}, { sequelize });
+//Send streamer model to database to create table
+streamer.sync({force: false}).then(() => {
+    console.log('Synced to database successfully!');
+}).catch(err => {
+    console.error('an error occured while proforming this operation', err);
+});
+
 
 // Queries
+// get the discord user id, twitchname, sitename, shards
 const getUsers = (request, response) => {
-    pool.query('SELECT * FROM users ORDER BY id ASC', (error, results) => {
-        if (error) {
-            throw error
-        }
-        response.status(200).json(results.rows)
-    })
+        streamer.findAll().then(streamers => {
+            response.status(200).json(streamers.map(s => JSON.parse(`{"userID": "${s.userID}", "twitchName": "${s.twitchName}", "siteName": "${s.siteName}", "shards": ${s.shards}}`)));
+        }, err => {
+            response.status(500).json({error: err, status: 'Internal Server Error'})
+        })
 }
-
-const getUserById = (request, response) => {
-    const id = parseInt(request.params.id)
-
-    pool.query('SELECT * FROM users WHERE id = $1', [id], (error, results) => {
-        if(error){
-            throw error
-        }
-        response.status(200).json(results.rows)
-    })
+// {where: {userID: request.query.userid}}|{where: {siteName: request.query.sitename}}
+const getUser = (request, response) => {
+    console.log(request.query)
+    if (!request.query.userid && !request.query.sitename && !request.query.twitchname) response.status(200).json({error: 'You must provide a valid query string.'})
+    if (request.query.userid || request.query.sitename || request.query.twitchname) {
+        
+        streamer.findAll({
+            where: {
+                [Op.or]: [
+                    {userID: request.query.userid !== undefined ? request.query.userid : 'none'},
+                    {siteName: request.query.sitename !== undefined ? request.query.sitename : 'none'},
+                    {twitchName: request.query.twitchname !== undefined ? request.query.twitchname : 'none'}
+                ]
+            }
+        }).then(streamers => {
+            if (streamers[0] === undefined) response.status(404).json({error: 'Not found.'});
+            else response.status(200).json(JSON.parse(`{"userID": "${streamers[0].userID}", "twitchName": "${streamers[0].twitchName}", "siteName": "${streamers[0].siteName}", "shards": ${streamers[0].shards}}`));
+        }, err => {
+            response.status(500).json({error: err, status: 'Internal Server Error'})
+        })
+    }
 }
 
 const createUser = (request, response) => {
@@ -68,7 +99,7 @@ pool.query('DELETE FROM users WHERE id = $1', [id], (error, results) => {
 
 module.exports = {
 getUsers,
-getUserById,
+getUser,
 createUser,
 updateUser,
 deleteUser,

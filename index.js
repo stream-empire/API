@@ -18,11 +18,16 @@ app.use(
 app.get('/', (request, response) => {
     response.json({ info: 'Node.js, express, and Postgres API'})
 })
-app.get('/users', db.getUsers)
-app.get('/users/:id', db.getUserById)
-app.post('/users', db.createUser)
-app.put('/users/:id', db.updateUser)
-app.delete('/users/:id', db.deleteUser)
+app.get('/users/getall', db.getUsers);
+// /users/leaderboard/shards/:count
+// /users/leaderboard/rank/:count
+// /users/all
+// /user/give/shards/:name&:amount
+
+app.get('/user/get/', db.getUser)
+//app.post('/users/create', db.createUser)
+//app.put('/users/:id', db.updateUser)
+//app.delete('/users/:id', db.deleteUser)
 
 
 app.listen(port, () => {
