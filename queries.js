@@ -7,17 +7,22 @@ const serverPass = process.env.SERVERPASSWORD;
 const serverDb = process.env.SERVERDB;
 const Sequelize = require('sequelize');
 const sequelize = new Sequelize(`postgres://${serverUser}:${serverPass}@${serverIp}:5432/${serverDb}`, {logging: false});
-const Op = Sequelize.Op
+const Op = Sequelize.Op;
+const bcrypt = require('bcrypt');
 //this sets up the streamer data table
-class streamer extends Sequelize.Model {}
+class streamer extends Sequelize.Model {};
 streamer.init({
     userID: {type: Sequelize.STRING, unique: true},
     twitchName: {type: Sequelize.STRING, unique: true},
     siteName: {type: Sequelize.STRING, unique: true},
+    email: {type: Sequelize.STRING, unique: true},
+    password: Sequelize.STRING,
     shards: Sequelize.INTEGER,
     verified: Sequelize.BOOLEAN,
     thumbnail: Sequelize.STRING,
-    isLive: Sequelize.BOOLEAN
+    isLive: Sequelize.BOOLEAN,
+    createdAt: Sequelize.DATE,
+    updatedAt: Sequelize.DATE
 }, { sequelize });
 //Send streamer model to database to create table
 streamer.sync({force: false}).then(() => {
@@ -40,14 +45,15 @@ const getUsers = (request, response) => {
 const getUser = (request, response) => {
     console.log(request.query)
     if (!request.query.userid && !request.query.sitename && !request.query.twitchname) response.status(200).json({error: 'You must provide a valid query string.'})
-    if (request.query.userid || request.query.sitename || request.query.twitchname) {
+    if (request.query.userid || request.query.sitename || request.query.twitchname || request.query.email) {
         
         streamer.findAll({
             where: {
                 [Op.or]: [
                     {userID: request.query.userid !== undefined ? request.query.userid : 'none'},
                     {siteName: request.query.sitename !== undefined ? request.query.sitename : 'none'},
-                    {twitchName: request.query.twitchname !== undefined ? request.query.twitchname : 'none'}
+                    {twitchName: request.query.twitchname !== undefined ? request.query.twitchname : 'none'},
+                    {email: request.query.email !== undefined ? request.query.email : 'none'}
                 ]
             }
         }).then(streamers => {
@@ -60,13 +66,31 @@ const getUser = (request, response) => {
 }
 
 const createUser = (request, response) => {
-    const { name, email } = request.body
-  
-    pool.query('INSERT INTO users (name, email) VALUES ($1, $2)', [name, email], (error, results) => {
-      if (error) {
-        throw error
-      }
-      response.status(201).send(`User added with ID: ${result.insertId}`)
+    const { name, email, password } = request.body
+    if (!name || !email || !password) response.status(200).json({error: 'Incorrect data sent.'})
+    streamer.findAll({
+        where: {
+            [Op.or]: [
+                {siteName: name !== undefined ? name : 'none'},
+                {email: email !== undefined ? email : 'none'}
+            ]
+        }
+    }).then(streamers => {
+        if (streamers[0] === undefined) {
+            var now = new Date(Date.now());
+            bcrypt.hash(password, parseInt(new Date(now).getTime().toString().split('').slice(12).join(''))).then(hashedPass => {
+                streamer.create({siteName: name, email: email, verified: false, createdAt: now, updatedAt: now, password: hashedPass}).then(newStreamer => {
+                    request.session.user = newStreamer;
+                    response.status(201).json(newStreamer);
+                });
+            }, err => {
+                response.status(500).json({error: err, status: 'Internal Server Error'});
+            });
+        }else {
+            response.status(200).json({error: 'There is already a user with this username or email.'});
+        }
+    }).catch(err => {
+        response.status(500).json({error: err, status: 'Internal Server Error'});
     })
   }
   
