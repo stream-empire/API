@@ -39,7 +39,7 @@ streamer.sync({force: false}).then(() => {
 // get the discord user id, twitchname, sitename, shards
 const getUsers = (request, response) => {
         streamer.findAll().then(streamers => {
-            response.status(200).json(streamers.map(s => JSON.parse(`{"discordName": "${s.discordName}", "discordId": "${s.discordId}", "twitchName": "${s.twitchName}", "siteName": "${s.siteName}", "shards": ${s.shards}, "thumbnail": "${s.thumbnail}"}`)));
+            response.status(200).json(streamers.map(s => JSON.parse(`{"discordName": "${s.discordName}", "discordId": "${s.discordId}", "twitchName": "${s.twitchName}", "twitchId": "${s.twitchId}", "siteName": "${s.siteName}", "shards": ${s.shards}, "thumbnail": "${s.thumbnail}"}`)));
         }, err => {
             response.status(500).json({error: err, status: 'Internal Server Error'})
         })
@@ -60,7 +60,7 @@ const getUser = (request, response) => {
             }
         }).then(streamers => {
             if (streamers[0] === undefined) response.status(404).json({error: 'Not found.'});
-            else response.status(200).json(JSON.parse(`{"discordName": "${streamers[0].discordName}", "discordId": "${streamers[0].discordId}", "twitchName": "${streamers[0].twitchName}", "siteName": "${streamers[0].siteName}", "shards": ${streamers[0].shards}, "thumbnail": "${streamers[0].thumbnail}"}`));
+            else response.status(200).json(JSON.parse(`{"discordName": "${streamers[0].discordName}", "discordId": "${streamers[0].discordId}", "twitchName": "${streamers[0].twitchName}", "twitchId": "${streamers[0].twitchId}", "siteName": "${streamers[0].siteName}", "shards": ${streamers[0].shards}, "thumbnail": "${streamers[0].thumbnail}"}`));
         }, err => {
             response.status(500).json({error: err, status: 'Internal Server Error'})
         })
@@ -200,7 +200,7 @@ const loginUser = (request, response) => {
                 response.status(500).json({error: err, status: 'Internal Server Error'});
             });
         }else {
-            response.status(401).json({error: 'This user does not exist.'});
+            response.status(404).json({error: 'This user does not exist.'});
         }
     }).catch(err => {
         response.status(500).json({error: err, status: 'Internal Server Error'});
@@ -229,6 +229,12 @@ const authDiscordCall = (request, response) => {
             streamers[0].update({discordName:request.session.passport.user.username, discordId: request.session.passport.user.id, updatedAt: now}).then(updatedStreamer => {
                 request.session.user = updatedStreamer;
                 response.redirect('/auth/complete/discord/'); //replace this with where ever the finished sites auth complete will be
+            }).catch(err => {
+                if (err.errors[0].validatorKey === 'not_unique') {
+                    response.status(409).json({error: 'This Discord account is already linked to a Stream Empires account.'})
+                }else {
+                    response.status(500).json({error: err, status: 'Internal Server Error'});
+                }
             });
         }else {
             response.status(401).json({error: 'This user does not exist'});
@@ -253,7 +259,13 @@ const authTwitchCall = (request, response) => {
             streamers[0].update({twitchName: request.session.passport.user.login, twitchId: request.session.passport.user.id, updatedAt: now, thumbnail: request.session.passport.user.profile_image_url}).then(updatedStreamer => {
                 request.session.user = updatedStreamer;
                 response.redirect('/auth/complete/twitch/'); //replace this with where ever the finished sites auth complete will be
-            });
+            }).catch(err => {
+                if (err.errors[0].validatorKey === 'not_unique') {
+                    response.status(409).json({error: 'This Twitch account is already linked to a Stream Empires account.'})
+                }else {
+                    response.status(500).json({error: err, status: 'Internal Server Error'});
+                }
+            });;
         }else {
             response.status(401).json({error: 'This user does not exist'});
         }
