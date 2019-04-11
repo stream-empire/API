@@ -67,7 +67,7 @@ passport.deserializeUser(function(user, done) {
 passport.use(new DiscordStrategy({
     clientID: discordClientID,
     clientSecret: discordSecret,
-    callbackURL: 'http://localhost:3000/auth/discord/callback'
+    callbackURL: 'http://api.streamempires.live/auth/discord/callback'
 },
 function(accessToken, refreshToken, profile, cb) {
     cb(null, profile);
