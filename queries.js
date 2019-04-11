@@ -101,8 +101,8 @@ const createUser = (request, response) => {
 const updateUser = (request, response) => {
     var { email, name, discordid, twitchname, password, newpassword } = request.body;
     name = name.toLowerCase();
-    if (!password) response.status(200).json({error: 'Incorrect data sent.'});
-    if (!request.session.user) response.status(401).json({error: 'Not signed in.'});
+    if (!password) {response.status(200).json({error: 'Incorrect data sent.'}); return;}
+    if (!request.session.user) {response.status(401).json({error: 'Not signed in.'}); return;}
     streamer.findAll({
         where: {
             [Op.or]: [
@@ -140,8 +140,8 @@ const updateUser = (request, response) => {
 
 const deleteUser = (request, response) => {
     const { password } = request.body;
-    if (!password) response.status(200).json({error: 'Incorrect data sent.'});
-    if (!request.session.user) response.status(401).json({error: 'Not signed in.'});
+    if (!password) {response.status(200).json({error: 'Incorrect data sent.'}); return;}
+    if (!request.session.user) {response.status(401).json({error: 'Not signed in.'}); return;}
     streamer.findAll({
         where: {
             [Op.or]: [
@@ -177,7 +177,8 @@ const logoutUser = (request, response) => {
 
 const loginUser = (request, response) => {
     const { name, password } = request.body
-    if (!name || !password) response.status(200).json({error: 'Incorrect data sent.'})
+    name = name.toLowerCase();
+    if (!name || !password) {response.status(200).json({error: 'Incorrect data sent.'}); return;}
     streamer.findAll({
         where: {
             [Op.or]: [
