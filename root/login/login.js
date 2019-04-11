@@ -3,11 +3,16 @@ function login(e) {
         $.post('/user/login/', {name: document.getElementById('name').value, password: document.getElementById('password').value}, (data, status) => {
             if (data.success) window.location.href = '/home';
             else document.getElementById('error').innerText = 'Username or password is incorrect.'
+        }).fail(err => {
+            document.getElementById('error').innerText = 'Username or password is incorrect.'
         });
     }else if (e.type === 'click') {
         $.post('/user/login/', {name: document.getElementById('name').value, password: document.getElementById('password').value}, (data, status) => {
             if (data.success) window.location.href = '/home';
             else document.getElementById('error').innerText = 'Username or password is incorrect.'
+        })
+		.fail(err => {
+            document.getElementById('error').innerText = 'Username or password is incorrect.'
         });
     }
 }
