@@ -78,7 +78,7 @@ passport.use('twitch', new OAuth2Strategy({
     tokenURL: 'https://id.twitch.tv/oauth2/token',
     clientID: twitchClientID,
     clientSecret: twitchSecret,
-    callbackURL: 'http://localhost:3000/auth/twitch/callback',
+    callbackURL: 'http://api.streamempires.live/auth/twitch/callback',
     state: true
   },
   function(accessToken, refreshToken, profile, done) {
@@ -99,7 +99,7 @@ app.get('/user/logout/', db.logoutUser);
 app.post('/user/login/', db.loginUser);
 app.get('/user/', db.getSelf);
 app.get('/auth/discord', (req, res) => {
-    res.redirect('https://discordapp.com/oauth2/authorize?client_id=565660436511457281&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fdiscord%2Fcallback&response_type=code&scope=identify')
+    res.redirect('https://discordapp.com/oauth2/authorize?client_id=565660436511457281&redirect_uri=http%3A%2F%2Fapi.streamempires.live%2Fauth%2Fdiscord%2Fcallback&response_type=code&scope=identify')
 });
 app.get('/auth/discord/callback', passport.authenticate('discord', {
     failureRedirect: '/'
