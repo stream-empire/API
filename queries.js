@@ -13,9 +13,11 @@ const bcrypt = require('bcrypt');
 class streamer extends Sequelize.Model {};
 streamer.init({
     discordId: {type: Sequelize.STRING, unique: true},
+    twitchId: {type: Sequelize.STRING, unique: true},
     twitchName: {type: Sequelize.STRING, unique: true},
     siteName: {type: Sequelize.STRING, unique: true},
     email: {type: Sequelize.STRING, unique: true},
+    discordName: Sequelize.STRING,
     admin: Sequelize.BOOLEAN,
     password: Sequelize.STRING,
     shards: Sequelize.INTEGER,
@@ -37,7 +39,7 @@ streamer.sync({force: false}).then(() => {
 // get the discord user id, twitchname, sitename, shards
 const getUsers = (request, response) => {
         streamer.findAll().then(streamers => {
-            response.status(200).json(streamers.map(s => JSON.parse(`{"discordId": "${s.discordId}", "twitchName": "${s.twitchName}", "siteName": "${s.siteName}", "shards": ${s.shards}}`)));
+            response.status(200).json(streamers.map(s => JSON.parse(`{"discordName": "${s.discordName}", "discordId": "${s.discordId}", "twitchName": "${s.twitchName}", "siteName": "${s.siteName}", "shards": ${s.shards}, "thumbnail": "${s.thumbnail}"}`)));
         }, err => {
             response.status(500).json({error: err, status: 'Internal Server Error'})
         })
@@ -58,7 +60,7 @@ const getUser = (request, response) => {
             }
         }).then(streamers => {
             if (streamers[0] === undefined) response.status(404).json({error: 'Not found.'});
-            else response.status(200).json(JSON.parse(`{"discordId": "${streamers[0].discordId}", "twitchName": "${streamers[0].twitchName}", "siteName": "${streamers[0].siteName}", "shards": ${streamers[0].shards}}`));
+            else response.status(200).json(JSON.parse(`{"discordName": "${streamers[0].discordName}", "discordId": "${streamers[0].discordId}", "twitchName": "${streamers[0].twitchName}", "siteName": "${streamers[0].siteName}", "shards": ${streamers[0].shards}, "thumbnail": "${streamers[0].thumbnail}"}`));
         }, err => {
             response.status(500).json({error: err, status: 'Internal Server Error'})
         })
@@ -129,7 +131,7 @@ const updateUser = (request, response) => {
                 response.status(500).json({error: err, status: 'Internal Server Error'});
             });
         }else {
-            response.status(403).json({error: 'This user does not exist'});
+            response.status(401).json({error: 'This user does not exist'});
         }
     }).catch(err => {
         response.status(500).json({error: err, status: 'Internal Server Error'});
@@ -161,7 +163,7 @@ const deleteUser = (request, response) => {
                 response.status(500).json({error: err, status: 'Internal Server Error'});
             });
         }else {
-            response.status(403).json({error: 'This user does not exist'});
+            response.status(401).json({error: 'This user does not exist'});
         }
     }).catch(err => {
         response.status(500).json({error: err, status: 'Internal Server Error'});
@@ -212,13 +214,51 @@ const getSelf = (request, response) => {
 }
 
 const authDiscordCall = (request, response) => {
-    console.log(request.session.passport.user)
-    response.status(200).json({success: true});
+    if (!request.session.user) response.status(401).json({error: 'Not signed in.'});
+    streamer.findAll({
+        where: {
+            [Op.or]: [
+                {siteName: request.session.user.siteName},
+                {email: request.session.user.email}
+            ]
+        }
+    }).then(streamers => {
+        if (streamers[0] !== undefined) {
+            var now = new Date(Date.now());
+            streamers[0].update({discordName:request.session.passport.user.username, discordId: request.session.passport.user.id, updatedAt: now}).then(updatedStreamer => {
+                request.session.user = updatedStreamer;
+                response.redirect('/auth/complete/discord/'); //replace this with where ever the finished sites auth complete will be
+            });
+        }else {
+            response.status(401).json({error: 'This user does not exist'});
+        }
+    }).catch(err => {
+        response.status(500).json({error: err, status: 'Internal Server Error'});
+    })
 }
 
 const authTwitchCall = (request, response) => {
-    console.log(request.session.passport)
-    response.status(200).json({success: true});
+    if (!request.session.user) response.status(401).json({error: 'Not signed in.'});
+    streamer.findAll({
+        where: {
+            [Op.or]: [
+                {siteName: request.session.user.siteName},
+                {email: request.session.user.email}
+            ]
+        }
+    }).then(streamers => {
+        if (streamers[0] !== undefined) {
+            var now = new Date(Date.now());
+            streamers[0].update({twitchName: request.session.passport.user.login, twitchId: request.session.passport.user.id, updatedAt: now, thumbnail: request.session.passport.user.profile_image_url}).then(updatedStreamer => {
+                request.session.user = updatedStreamer;
+                response.redirect('/auth/complete/twitch/'); //replace this with where ever the finished sites auth complete will be
+            });
+        }else {
+            response.status(401).json({error: 'This user does not exist'});
+        }
+    }).catch(err => {
+        response.status(500).json({error: err, status: 'Internal Server Error'});
+    })
 }
 
 module.exports = {
