@@ -19,11 +19,11 @@
 | Privileges | None          |
 
 #### /user/get
-|  Details   | value         | Required |
-|---         | ------------- | ---      |
-| Method     | GET           | Yes      |
-| Parameters | name          | Yes      |
-| Privileges | None          | N/A      |
+|  Details   | value                         | Required |
+|---         | ----------------------------- | ---      |
+| Method     | GET                           | Yes      |
+| Parameters | site name or user id          | Yes      |
+| Privileges | None                          | N/A      |
 ---
 ### Authentication Paths
 ```
