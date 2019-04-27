@@ -5,6 +5,7 @@ const serverIp = process.env.SERVERIP;
 const serverUser = process.env.SERVERUSERNAME;
 const serverPass = process.env.SERVERPASSWORD;
 const serverDb = process.env.SERVERDB;
+const shardKey = process.env.SHARDKEY;
 const Sequelize = require('sequelize');
 const sequelize = new Sequelize(`postgres://${serverUser}:${serverPass}@${serverIp}:5432/${serverDb}`, {logging: false});
 const Op = Sequelize.Op;
@@ -47,19 +48,18 @@ const getUsers = (request, response) => {
 // {where: {discordId: request.query.discordId}}|{where: {siteName: request.query.sitename}}
 const getUser = (request, response) => {
     if (!request.query.discordid && !request.query.sitename && !request.query.twitchname) response.status(200).json({error: 'You must provide a valid query string.'})
-    if (request.query.discordid || request.query.sitename || request.query.twitchname || request.query.email) {
+    if (request.query.discordid || request.query.sitename || request.query.twitchname) {
         
         streamer.findAll({
             where: {
                 [Op.or]: [
-                    {discordId: request.query.discordId !== undefined ? request.query.discordId : 'none'},
+                    {discordId: request.query.discordid !== undefined ? request.query.discordid : 'none'},
                     {siteName: request.query.sitename !== undefined ? request.query.sitename : 'none'},
-                    {twitchName: request.query.twitchname !== undefined ? request.query.twitchname : 'none'},
-                    {email: request.query.email !== undefined ? request.query.email : 'none'}
+                    {twitchName: request.query.twitchname !== undefined ? request.query.twitchname : 'none'}
                 ]
             }
         }).then(streamers => {
-            if (streamers[0] === undefined) response.status(404).json({error: 'Not found.'});
+            if (streamers[0] === undefined) response.status(404).json({error: 'Not found'});
             else response.status(200).json(JSON.parse(`{"discordName": "${streamers[0].discordName}", "discordId": "${streamers[0].discordId}", "twitchName": "${streamers[0].twitchName}", "twitchId": "${streamers[0].twitchId}", "siteName": "${streamers[0].siteName}", "shards": ${streamers[0].shards}, "thumbnail": "${streamers[0].thumbnail}"}`));
         }, err => {
             response.status(500).json({error: err, status: 'Internal Server Error'})
@@ -70,7 +70,7 @@ const getUser = (request, response) => {
 const createUser = (request, response) => {
     var { name, email, password } = request.body;
     name = name.toLowerCase();
-    if (!name || !email || !password) response.status(200).json({error: 'Incorrect data sent.'})
+    if (!name || !email || !password) {response.status(200).json({error: 'Incorrect data sent'}); return;}
     streamer.findAll({
         where: {
             [Op.or]: [
@@ -91,7 +91,7 @@ const createUser = (request, response) => {
                 response.status(500).json({error: err, status: 'Internal Server Error'});
             });
         }else {
-            response.status(200).json({error: 'There is already a user with this username or email.'});
+            response.status(200).json({error: 'There is already a user with this username or email'});
         }
     }).catch(err => {
         response.status(500).json({error: err, status: 'Internal Server Error'});
@@ -101,8 +101,8 @@ const createUser = (request, response) => {
 const updateUser = (request, response) => {
     var { email, name, discordid, twitchname, password, newpassword } = request.body;
     name = name.toLowerCase();
-    if (!password) {response.status(200).json({error: 'Incorrect data sent.'}); return;}
-    if (!request.session.user) {response.status(401).json({error: 'Not signed in.'}); return;}
+    if (!password) {response.status(200).json({error: 'Incorrect data sent'}); return;}
+    if (!request.session.user) {response.status(401).json({error: 'Not signed in'}); return;}
     streamer.findAll({
         where: {
             [Op.or]: [
@@ -125,7 +125,7 @@ const updateUser = (request, response) => {
                         response.status(500).json({error: err, status: 'Internal Server Error'});
                     });
                 }else {
-                    response.status(401).json({error: 'Incorrect credentials.'})
+                    response.status(401).json({error: 'Incorrect credentials'})
                 }
             }, err => {
                 response.status(500).json({error: err, status: 'Internal Server Error'});
@@ -140,8 +140,8 @@ const updateUser = (request, response) => {
 
 const deleteUser = (request, response) => {
     var { password } = request.body;
-    if (!password) {response.status(200).json({error: 'Incorrect data sent.'}); return;}
-    if (!request.session.user) {response.status(401).json({error: 'Not signed in.'}); return;}
+    if (!password) {response.status(200).json({error: 'Incorrect data sent'}); return;}
+    if (!request.session.user) {response.status(401).json({error: 'Not signed in'}); return;}
     streamer.findAll({
         where: {
             [Op.or]: [
@@ -157,7 +157,7 @@ const deleteUser = (request, response) => {
                         response.status(200).json({success: true});
                     });
                 }else {
-                    response.status(401).json({error: 'Incorrect credentials.'})
+                    response.status(401).json({error: 'Incorrect credentials'})
                 }
             }, err => {
                 response.status(500).json({error: err, status: 'Internal Server Error'});
@@ -170,7 +170,7 @@ const deleteUser = (request, response) => {
     })
 }
 const logoutUser = (request, response) => {
-    if (!request.session.user) response.status(401).json({error: 'Not signed in.'});
+    if (!request.session.user) response.status(401).json({error: 'Not signed in'});
     request.session.reset();
     response.status(200).json({success: true});
 }
@@ -178,7 +178,7 @@ const logoutUser = (request, response) => {
 const loginUser = (request, response) => {
     var { name, password } = request.body
     name = name.toLowerCase();
-    if (!name || !password) {response.status(200).json({error: 'Incorrect data sent.'}); return;}
+    if (!name || !password) {response.status(200).json({error: 'Incorrect data sent'}); return;}
     streamer.findAll({
         where: {
             [Op.or]: [
@@ -194,13 +194,13 @@ const loginUser = (request, response) => {
                     delete request.session.user.password;
                     response.status(200).json({success: true});
                 }else {
-                    response.status(401).json({error: 'Incorrect credentials.'})
+                    response.status(401).json({error: 'Incorrect credentials'})
                 }
             }, err => {
                 response.status(500).json({error: err, status: 'Internal Server Error'});
             });
         }else {
-            response.status(404).json({error: 'This user does not exist.'});
+            response.status(404).json({error: 'This user does not exist'});
         }
     }).catch(err => {
         response.status(500).json({error: err, status: 'Internal Server Error'});
@@ -208,14 +208,14 @@ const loginUser = (request, response) => {
 }
 
 const getSelf = (request, response) => {
-    if (!request.session.user) response.status(401).json({error: 'Not signed in.'});
+    if (!request.session.user) {response.status(401).json({error: 'Not signed in'}); return;}
     if (request.session.user) {
         response.redirect(`/user/get/?sitename=${request.session.user.siteName}`)
     }
 }
 
 const authDiscordCall = (request, response) => {
-    if (!request.session.user) response.status(401).json({error: 'Not signed in.'});
+    if (!request.session.user) {response.status(401).json({error: 'Not signed in'}); return;}
     streamer.findAll({
         where: {
             [Op.or]: [
@@ -245,7 +245,7 @@ const authDiscordCall = (request, response) => {
 }
 
 const authTwitchCall = (request, response) => {
-    if (!request.session.user) response.status(401).json({error: 'Not signed in.'});
+    if (!request.session.user) response.status(401).json({error: 'Not signed in'});
     streamer.findAll({
         where: {
             [Op.or]: [
@@ -274,6 +274,64 @@ const authTwitchCall = (request, response) => {
     })
 }
 
+const giveShards = (request, response) => {
+    var { name, shards, authorization } = request.body;
+    name = name.toLowerCase();
+    shards = parseInt(shards);
+    streamer.findAll({
+        where: {
+            [Op.or]: [
+                {discordId: name},
+                {siteName: name},
+                {twitchName: name}
+            ]
+        }
+    }).then(streamers => {
+        if (streamers[0] === undefined) response.status(404).json({error: 'Not found'});
+        else {
+            if (authorization !== shardKey) response.status(401).json({error: 'Invalid authorization'});
+            else {
+                streamers[0].update({shards: streamers[0].shards + shards}).then(() => {
+                    response.status(200).json(JSON.parse(`{"discordName": "${streamers[0].discordName}", "discordId": "${streamers[0].discordId}", "twitchName": "${streamers[0].twitchName}", "twitchId": "${streamers[0].twitchId}", "siteName": "${streamers[0].siteName}", "shards": ${streamers[0].shards}, "thumbnail": "${streamers[0].thumbnail}"}`));
+                }).catch(err => {
+                    response.status(500).json({error: err, status: 'Internal Server Error'})
+                })
+            }
+        }
+    }, err => {
+        response.status(500).json({error: err, status: 'Internal Server Error'})
+    })
+}
+
+const takeShards = (request, response) => {
+    var { name, shards, authorization } = request.body;
+    name = name.toLowerCase();
+    shards = parseInt(shards);
+    streamer.findAll({
+        where: {
+            [Op.or]: [
+                {discordId: name},
+                {siteName: name},
+                {twitchName: name}
+            ]
+        }
+    }).then(streamers => {
+        if (streamers[0] === undefined) response.status(404).json({error: 'Not found'});
+        else {
+            if (authorization !== shardKey) response.status(401).json({error: 'Invalid authorization'});
+            else {
+                streamers[0].update({shards: streamers[0].shards - shards}).then(() => {
+                    response.status(200).json(JSON.parse(`{"discordName": "${streamers[0].discordName}", "discordId": "${streamers[0].discordId}", "twitchName": "${streamers[0].twitchName}", "twitchId": "${streamers[0].twitchId}", "siteName": "${streamers[0].siteName}", "shards": ${streamers[0].shards}, "thumbnail": "${streamers[0].thumbnail}"}`));
+                }).catch(err => {
+                    response.status(500).json({error: err, status: 'Internal Server Error'})
+                })
+            }
+        }
+    }, err => {
+        response.status(500).json({error: err, status: 'Internal Server Error'})
+    })
+}
+
 module.exports = {
 getUsers,
 getUser,
@@ -284,5 +342,7 @@ logoutUser,
 loginUser,
 getSelf,
 authDiscordCall,
-authTwitchCall
+authTwitchCall,
+giveShards,
+takeShards
 }
