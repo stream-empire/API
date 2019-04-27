@@ -1,15 +1,32 @@
 # Stream Empires API
-## Functionality
-* Create data points
-* Update data points
-* DELETE data points
 
-And many more to come.
- 
+## Paths 
+### User Paths
+```
+/users/getall
+/user/get
+/user/create
+/user/update
+/user/delete
+/user/logout
+/user/login
+```
+#### /users/getall
+|  Details   | value         | 
+|---         | ------------- |
+| Method     | GET           |
+| Parameters | None          |
+| Privileges | None          |
 
-## Tools
-We use Express and Node to create the API endpoints
-
-
-## Note
-all visual elements like `/home` are only for demonstration/debugging and are subject to change.
+#### /user/get
+|  Details   | value                   | Required |
+|---         | ----------------------- | ---      |
+| Method     | GET                     | Yes      |
+| Parameters | sitename or id          | Yes      |
+| Privileges | None                    | N/A      |
+---
+### Authentication Paths
+```
+/auth/discord
+/auth/twitch
+```
