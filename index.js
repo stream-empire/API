@@ -97,6 +97,8 @@ app.put('/user/update/', db.updateUser);
 app.delete('/user/delete/', db.deleteUser);
 app.get('/user/logout/', db.logoutUser);
 app.post('/user/login/', db.loginUser);
+app.put('/users/shards/give/', db.giveShards);
+app.put('/users/shards/take/', db.takeShards);
 app.get('/user/', db.getSelf);
 app.get('/auth/discord', (req, res) => {
     res.redirect('https://discordapp.com/oauth2/authorize?client_id=565660436511457281&redirect_uri=http%3A%2F%2Fapi.streamempires.live%2Fauth%2Fdiscord%2Fcallback&response_type=code&scope=identify')
@@ -105,14 +107,12 @@ app.get('/auth/discord/callback', passport.authenticate('discord', {
     failureRedirect: '/'
 }), function(req, res) {
     db.authDiscordCall(req, res);
-
 });
 app.get('/auth/twitch', passport.authenticate('twitch', { scope: 'user_read' }));
 app.get('/auth/twitch/callback', passport.authenticate('twitch', {
     failureRedirect: '/'
 }), function(req, res) {
     db.authTwitchCall(req, res);
-
 });
 
 app.listen(port, () => {
