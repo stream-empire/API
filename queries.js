@@ -40,7 +40,7 @@ streamer.sync({force: false}).then(() => {
 // get the discord user id, twitchname, sitename, shards
 const getUsers = (request, response) => {
         streamer.findAll().then(streamers => {
-            response.status(200).json(streamers.map(s => JSON.parse(`{"discordName": "${s.discordName}", "discordId": "${s.discordId}", "twitchName": "${s.twitchName}", "twitchId": "${s.twitchId}", "siteName": "${s.siteName}", "shards": ${s.shards}, "thumbnail": "${s.thumbnail}"}`)));
+            response.status(200).json(streamers.map(s => JSON.parse(`{"discordName": ${s.discordName ? `"${s.discordName}"` : null}, "discordId": ${s.discordId ? `"${s.discordId}"` : null}, "twitchName": ${s.twitchName ? `"${s.twitchName}"` : null}, "twitchId": ${s.twitchId ? `"${s.twitchId}"` : null}, "siteName": "${s.siteName}", "shards": ${s.shards}, "thumbnail": ${s.thumbnail ? `"${s.thumbnail}"` : null}}`)));
         }, err => {
             response.status(500).json({error: err, status: 'Internal Server Error'})
         })
@@ -60,7 +60,7 @@ const getUser = (request, response) => {
             }
         }).then(streamers => {
             if (streamers[0] === undefined) response.status(404).json({error: 'Not found'});
-            else response.status(200).json(JSON.parse(`{"discordName": "${streamers[0].discordName}", "discordId": "${streamers[0].discordId}", "twitchName": "${streamers[0].twitchName}", "twitchId": "${streamers[0].twitchId}", "siteName": "${streamers[0].siteName}", "shards": ${streamers[0].shards}, "thumbnail": "${streamers[0].thumbnail}"}`));
+            else response.status(200).json(JSON.parse(`{"discordName": ${streamers[0].discordName ? `"${streamers[0].discordName}"` : null}, "discordId": ${streamers[0].discordId ? `"${streamers[0].discordId}"` : null}, "twitchName": ${streamers[0].twitchName ? `"${streamers[0].twitchName}"` : null}, "twitchId": ${streamers[0].twitchId ? `"${streamers[0].twitchId}"` : null}, "siteName": "${streamers[0].siteName}", "shards": ${streamers[0].shards}, "thumbnail": ${streamers[0].thumbnail ? `"${streamers[0].thumbnail}"` : null}}`));
         }, err => {
             response.status(500).json({error: err, status: 'Internal Server Error'})
         })
@@ -292,7 +292,7 @@ const giveShards = (request, response) => {
             if (authorization !== shardKey) response.status(401).json({error: 'Invalid authorization'});
             else {
                 streamers[0].update({shards: streamers[0].shards + shards}).then(() => {
-                    response.status(200).json(JSON.parse(`{"discordName": "${streamers[0].discordName}", "discordId": "${streamers[0].discordId}", "twitchName": "${streamers[0].twitchName}", "twitchId": "${streamers[0].twitchId}", "siteName": "${streamers[0].siteName}", "shards": ${streamers[0].shards}, "thumbnail": "${streamers[0].thumbnail}"}`));
+                    response.status(200).json(JSON.parse(`{"discordName": ${streamers[0].discordName ? `"${streamers[0].discordName}"` : null}, "discordId": ${streamers[0].discordId ? `"${streamers[0].discordId}"` : null}, "twitchName": ${streamers[0].twitchName ? `"${streamers[0].twitchName}"` : null}, "twitchId": ${streamers[0].twitchId ? `"${streamers[0].twitchId}"` : null}, "siteName": "${streamers[0].siteName}", "shards": ${streamers[0].shards}, "thumbnail": ${streamers[0].thumbnail ? `"${streamers[0].thumbnail}"` : null}}`));
                 }).catch(err => {
                     response.status(500).json({error: err, status: 'Internal Server Error'})
                 })
@@ -321,7 +321,7 @@ const takeShards = (request, response) => {
             if (authorization !== shardKey) response.status(401).json({error: 'Invalid authorization'});
             else {
                 streamers[0].update({shards: streamers[0].shards - shards}).then(() => {
-                    response.status(200).json(JSON.parse(`{"discordName": "${streamers[0].discordName}", "discordId": "${streamers[0].discordId}", "twitchName": "${streamers[0].twitchName}", "twitchId": "${streamers[0].twitchId}", "siteName": "${streamers[0].siteName}", "shards": ${streamers[0].shards}, "thumbnail": "${streamers[0].thumbnail}"}`));
+                    response.status(200).json(JSON.parse(`{"discordName": ${streamers[0].discordName ? `"${streamers[0].discordName}"` : null}, "discordId": ${streamers[0].discordId ? `"${streamers[0].discordId}"` : null}, "twitchName": ${streamers[0].twitchName ? `"${streamers[0].twitchName}"` : null}, "twitchId": ${streamers[0].twitchId ? `"${streamers[0].twitchId}"` : null}, "siteName": "${streamers[0].siteName}", "shards": ${streamers[0].shards}, "thumbnail": ${streamers[0].thumbnail ? `"${streamers[0].thumbnail}"` : null}}`));
                 }).catch(err => {
                     response.status(500).json({error: err, status: 'Internal Server Error'})
                 })
